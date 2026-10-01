@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BountyJudge | Web3 Bounty Verification</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-main: #0a0b10;
+            --bg-card: #13151c;
+            --bg-input: #1a1d27;
+            --border-light: rgba(255, 255, 255, 0.08);
+            --border-hover: rgba(255, 255, 255, 0.15);
+            --text-main: #ffffff;
+            --text-muted: #94a3b8;
+            --text-darker: #64748b;
+            
+            --accent-purple: #6366f1;
+            --accent-purple-hover: #4f46e5;
+            --accent-green: #10b981;
+            --accent-green-hover: #059669;
+            --accent-red: #ef4444;
+            
+            --flow-blue: rgba(59, 130, 246, 0.5);
+            --flow-blue-bg: rgba(59, 130, 246, 0.1);
+            --flow-teal: rgba(6, 182, 212, 0.5);
+            --flow-teal-bg: rgba(6, 182, 212, 0.1);
+            --flow-purple: rgba(139, 92, 246, 0.7);
+            --flow-purple-bg: rgba(139, 92, 246, 0.15);
+            --flow-green: rgba(16, 185, 129, 0.6);
+            --flow-green-bg: rgba(16, 185, 129, 0.1);
+            --flow-gray: rgba(107, 114, 128, 0.5);
+            --flow-gray-bg: rgba(107, 114, 128, 0.1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        html { scroll-behavior: smooth; scroll-padding-top: 100px; }
+        body { background-color: var(--bg-main); color: var(--text-main); line-height: 1.5; overflow-x: hidden; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 2rem; }
+
+        nav { display: flex; justify-content: space-between; align-items: center; padding: 1.5rem 0; border-bottom: 1px solid var(--border-light); position: sticky; top: 0; background: rgba(10, 11, 16, 0.85); backdrop-filter: blur(12px); z-index: 100; }
+        .logo-area { display: flex; align-items: center; gap: 0.75rem; font-size: 1.25rem; font-weight: 600; }
+        .logo-icon { width: 24px; height: 24px; }
+        .nav-links { display: flex; gap: 2.5rem; }
+        .nav-links a { color: var(--text-muted); text-decoration: none; font-size: 0.875rem; font-weight: 500; transition: color 0.2s; cursor: pointer; }
+        .nav-links a:hover { color: var(--text-main); }
+
+        .btn { padding: 0.75rem 1.5rem; border-radius: 9999px; font-size: 0.875rem; font-weight: 500; cursor: pointer; border: none; transition: all 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; }
+        .btn-primary { background-color: var(--text-main); color: var(--bg-main); }
+        .btn-primary:hover { opacity: 0.9; }
+
+        .hero { display: flex; align-items: center; justify-content: space-between; padding: 6rem 0; gap: 4rem; }
+        .hero-content { flex: 1; max-width: 600px; }
+        .badge { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); font-weight: 600; margin-bottom: 1.5rem; display: block; }
+        h1 { font-size: 4.5rem; line-height: 1.1; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 1.5rem; }
+        h1 span { color: var(--text-muted); }
+        .hero-subtitle { font-size: 1.125rem; color: var(--text-muted); margin-bottom: 3rem; max-width: 480px; }
+        
+        .hero-graphic { flex: 1; position: relative; height: 400px; display: flex; align-items: center; justify-content: center; }
+        .glass-card-art { position: absolute; width: 240px; height: 280px; background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.01) 100%); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; backdrop-filter: blur(12px); box-shadow: 0 24px 40px rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; }
+        .card-1 { transform: translate(-40px, -20px) rotate(-5deg) scale(0.9); opacity: 0.4; z-index: 1; }
+        .card-2 { transform: translate(-20px, -10px) rotate(-2deg) scale(0.95); opacity: 0.7; z-index: 2; }
+        .card-3 { transform: translate(0, 0) rotate(2deg); z-index: 3; border: 1px solid rgba(134, 239, 236, 0.3); box-shadow: 0 0 60px rgba(134, 239, 236, 0.1); }
+        .check-huge { font-size: 6rem; color: #fff; filter: drop-shadow(0 0 20px rgba(255,255,255,0.6)); }
+
+        .section-anchor { padding-top: 2rem; margin-bottom: 4rem; }
+        .section-header { font-size: 1.75rem; font-weight: 500; margin-bottom: 0.5rem; padding: 0; border: none; }
+        
+        /* Flowchart */
+        .arch-wrapper { display: grid; grid-template-columns: 1fr 380px; gap: 3rem; margin-top: 2rem; }
+        .flow-container { display: flex; flex-direction: column; align-items: center; padding: 2rem 0; position: relative; }
+        .flow-node { background: var(--bg-card); border: 1px solid var(--border-light); border-radius: 12px; padding: 1rem 1.5rem; width: 280px; display: flex; align-items: center; gap: 1rem; position: relative; z-index: 2; margin-bottom: 2rem; transition: all 0.3s ease; }
+        .flow-node .icon { font-size: 1.25rem; display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 8px; background: rgba(255,255,255,0.05); }
+        .flow-node .details h4 { font-size: 0.875rem; font-weight: 500; margin-bottom: 0.25rem; }
+        .flow-node .details p { font-size: 0.75rem; color: var(--text-muted); font-family: monospace; }
+        .flow-line { width: 2px; height: 2rem; background: var(--border-light); position: absolute; bottom: -2rem; left: 50%; transform: translateX(-50%); z-index: 1; }
+        .flow-line::after { content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); border-width: 6px 4px 0 4px; border-style: solid; border-color: var(--border-light) transparent transparent transparent; }
+        .flow-diamond { width: 140px; height: 140px; background: var(--bg-card); border: 1px solid var(--flow-teal); box-shadow: 0 0 20px var(--flow-teal-bg); transform: rotate(45deg); display: flex; align-items: center; justify-content: center; margin-bottom: 3rem; position: relative; z-index: 2; border-radius: 16px; }
+        .flow-diamond-content { transform: rotate(-45deg); text-align: center; }
+        .flow-diamond-content span { font-size: 1.5rem; display: block; margin-bottom: 0.5rem;}
+        .flow-diamond-content p { font-size: 0.75rem; font-weight: 500; }
+        .branch-container { display: flex; width: 400px; justify-content: space-between; margin-top: -2rem; margin-bottom: 2rem; position: relative; }
+        .branch-line-left, .branch-line-right { position: absolute; top: -2rem; width: 120px; height: 2px; background: var(--border-light); }
+        .branch-line-left { left: 80px; }
+        .branch-line-right { right: 80px; }
+        .branch-line-down { position: absolute; width: 2px; height: 2rem; background: var(--border-light); top: -2rem; }
+        
+        .node-blue { border-color: var(--flow-blue); box-shadow: 0 0 25px var(--flow-blue-bg); }
+        .node-blue .icon { color: #60a5fa; }
+        .node-teal { border-color: var(--flow-teal); box-shadow: 0 0 25px var(--flow-teal-bg); }
+        .node-teal .icon { color: #2dd4bf; }
+        .node-purple { border-color: var(--flow-purple); box-shadow: 0 0 30px var(--flow-purple-bg); background: linear-gradient(180deg, var(--bg-card) 0%, rgba(139, 92, 246, 0.1) 100%); }
+        .node-purple .icon { color: #c084fc; }
+        .node-green { border-color: var(--flow-green); box-shadow: 0 0 25px var(--flow-green-bg); background: linear-gradient(180deg, var(--bg-card) 0%, rgba(16, 185, 129, 0.1) 100%); width: 180px; justify-content: center;}
+        .node-green .icon { color: #34d399; }
+        
+        .node-red { border-color: var(--accent-red); box-shadow: 0 0 25px rgba(239, 68, 68, 0.1); background: linear-gradient(180deg, var(--bg-card) 0%, rgba(239, 68, 68, 0.05) 100%); width: 180px; justify-content: center;}
+        .node-red .icon { color: #ef4444; }
+        
+        .node-gray { border-color: var(--flow-gray); background: var(--bg-card); width: 180px; justify-content: center; }
+        
+        .sidebar-card { background: var(--bg-card); border: 1px solid var(--border-light); border-radius: 16px; padding: 1.5rem; margin-bottom: 1.5rem; }
+        .sidebar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-light); }
+        .sidebar-header h3 { font-size: 1rem; font-weight: 500; }
+        .step-badge { background: rgba(6, 182, 212, 0.1); color: #2dd4bf; border: 1px solid var(--flow-teal); width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-size: 0.75rem; font-weight: bold; }
+        .process-list { list-style: none; }
+        .process-item { display: flex; align-items: flex-start; gap: 1rem; margin-bottom: 1.25rem; position: relative; }
+        .process-item::after { content: ''; position: absolute; left: 11px; top: 24px; bottom: -1.25rem; width: 2px; background: var(--border-light); z-index: 1; }
+        .process-item:last-child::after { display: none; }
+        .process-num { width: 24px; height: 24px; border-radius: 50%; border: 1px solid var(--border-light); display: flex; align-items: center; justify-content: center; font-size: 0.7rem; color: var(--text-muted); background: var(--bg-main); z-index: 2; }
+        .process-item.active .process-num { border-color: var(--flow-teal); color: #2dd4bf; background: var(--flow-teal-bg); box-shadow: 0 0 10px var(--flow-teal-bg); }
+        .process-text h4 { font-size: 0.875rem; font-weight: 500; }
+        .process-text p { font-size: 0.75rem; color: var(--text-muted); font-family: monospace; margin-top: 0.25rem; }
+        .feature-grid { display: flex; flex-direction: column; gap: 1rem; }
+        .feature-row { display: flex; align-items: center; gap: 1rem; font-size: 0.875rem; color: var(--text-muted); }
+        .feature-row span { color: #2dd4bf; }
+        
+        /* Dashboard */
+        .dash-header-wrap { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-light); margin-top: 4rem; }
+        .dash-title { font-size: 1.75rem; font-weight: 500; }
+        .dash-subtitle { color: var(--text-muted); font-size: 0.875rem; margin-top: 0.25rem; }
+        
+        .status-badge { display: flex; align-items: center; gap: 0.5rem; font-size: 0.75rem; font-weight: 500; color: var(--text-muted); background: rgba(255,255,255,0.03); padding: 0.5rem 1rem; border-radius: 9999px; border: 1px solid var(--border-light); }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; background-color: var(--accent-green); box-shadow: 0 0 8px rgba(16, 185, 129, 0.5); }
+
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; }
+        .dash-card { background-color: var(--bg-card); border: 1px solid var(--border-light); border-radius: 16px; padding: 1.5rem; }
+        
+        .card-header-flex { display: flex; align-items: flex-start; gap: 1rem; margin-bottom: 1.5rem; }
+        .card-icon-box { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; }
+        .icon-purple-bg { background: rgba(99, 102, 241, 0.1); color: var(--accent-purple); border: 1px solid rgba(99, 102, 241, 0.2); }
+        .icon-green-bg { background: rgba(16, 185, 129, 0.1); color: var(--accent-green); border: 1px solid rgba(16, 185, 129, 0.2); }
+        .icon-blue-bg { background: rgba(59, 130, 246, 0.1); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.2); }
+        .icon-orange-bg { background: rgba(245, 158, 11, 0.1); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.2); }
+        
+        .card-header-text h3 { font-size: 1rem; font-weight: 500; color: var(--text-main); margin-bottom: 0.25rem; }
+        .card-header-text p { font-size: 0.75rem; color: var(--text-muted); }
+
+        .input-group { display: flex; align-items: center; background-color: var(--bg-input); border: 1px solid var(--border-light); border-radius: 8px; padding: 0 1rem; margin-bottom: 1rem; transition: border-color 0.2s; }
+        .input-group:focus-within { border-color: var(--text-muted); }
+        .input-group svg { color: var(--text-darker); flex-shrink: 0; }
+        .input-group input, .input-group textarea { flex: 1; background: transparent; border: none; color: white; padding: 0.875rem 0.75rem; font-size: 0.875rem; outline: none; width: 100%; resize: none; }
+        .flex-row { display: flex; gap: 0.75rem; align-items: center; }
+        
+        .btn-ui { width: 100%; padding: 0.875rem; border-radius: 8px; font-weight: 500; font-size: 0.875rem; border: none; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
+        .btn-purple { background: var(--accent-purple); color: white; }
+        .btn-purple:hover { background: var(--accent-purple-hover); }
+        .btn-green { background: var(--accent-green); color: white; }
+        .btn-green:hover { background: var(--accent-green-hover); }
+        
+        .btn-action { background: var(--bg-input); border: 1px solid var(--border-light); color: var(--text-main); padding: 0.875rem 1rem; border-radius: 8px; font-size: 0.875rem; cursor: pointer; transition: background 0.2s; white-space: nowrap; display: flex; align-items: center; gap: 0.5rem; }
+        .btn-action:hover { background: rgba(255,255,255,0.05); }
+        .btn-tint-green { color: var(--accent-green); background: rgba(16, 185, 129, 0.05); border-color: rgba(16, 185, 129, 0.2); }
+        .btn-tint-green:hover { background: rgba(16, 185, 129, 0.1); }
+        .btn-tint-red { color: var(--accent-red); background: rgba(239, 68, 68, 0.05); border-color: rgba(239, 68, 68, 0.2); }
+        .btn-tint-red:hover { background: rgba(239, 68, 68, 0.1); }
+
+        .sub-label { font-size: 0.875rem; font-weight: 500; color: var(--text-main); margin: 1.5rem 0 1rem 0; }
+        .terminal-wrap { margin-top: 1.5rem; }
+        .terminal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
+        .terminal-title { font-size: 0.875rem; font-weight: 500; display: flex; align-items: center; gap: 0.5rem; }
+        .btn-clear { background: transparent; border: 1px solid var(--border-light); color: var(--text-muted); padding: 0.25rem 0.75rem; border-radius: 6px; font-size: 0.75rem; cursor: pointer; display: flex; align-items: center; gap: 0.25rem; transition: 0.2s; }
+        .btn-clear:hover { color: white; background: rgba(255,255,255,0.05); }
+        .console-output { background-color: #000; border: 1px solid var(--border-light); padding: 1rem; border-radius: 8px; color: #4ade80; font-family: monospace; font-size: 0.75rem; height: 140px; overflow-y: auto; }
+
+        @media (max-width: 900px) {
+            .arch-wrapper { grid-template-columns: 1fr; }
+            .branch-container { width: 100%; max-width: 300px; flex-direction: column; align-items: center; gap: 1rem; }
+            .branch-line-left, .branch-line-right, .branch-line-down { display: none; }
+            .hero { flex-direction: column; text-align: center; padding: 4rem 0; }
+            h1 { font-size: 3rem; }
+            .grid-2 { grid-template-columns: 1fr; }
+            .nav-links { display: none; }
+            .dash-header-wrap { flex-direction: column; align-items: flex-start; gap: 1rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- Navigation -->
+        <nav>
+            <div class="logo-area">
+                <img src="logo.svg" alt="Logo" class="logo-icon" onerror="this.style.display='none'">
+                <span>Bounty<span style="color: var(--text-muted); font-weight: 300;">Judge</span></span>
+            </div>
+            <div class="nav-links">
+                <a href="#how-it-works">Architecture</a>
+                <a href="#dashboard">dApp Dashboard</a>
+            </div>
+            <button id="connectBtn" class="btn btn-primary" onclick="app.connectWallet()">Connect Wallet</button>
+        </nav>
+
+        <!-- Hero -->
+        <header class="hero">
+            <div class="hero-content">
+                <span class="badge">Web3 Bounty Verification</span>
+                <h1>Fair validation<br><span>for real contributions</span></h1>
+                <p class="hero-subtitle">BountyJudge uses AI and open evidence to verify Web3 contributions objectively, transparently, and on-chain.</p>
+                <div class="hero-buttons">
+                    <button class="btn btn-primary" onclick="document.getElementById('dashboard').scrollIntoView({behavior: 'smooth'})">Launch dApp &rarr;</button>
+                </div>
+            </div>
+            <div class="hero-graphic">
+                <div class="glass-card-art card-1"></div>
+                <div class="glass-card-art card-2"></div>
+                <div class="glass-card-art card-3">
+                    <span class="check-huge">✓</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Architecture Section (Fixed Execution Order & Status Logic) -->
+        <section id="how-it-works" class="section-anchor">
+            <div style="margin-bottom: 2rem;">
+                <span class="badge">VERIFICATION FLOW</span>
+                <h2 class="section-header">Submission Process</h2>
+                <p style="color: var(--text-muted); margin-top: 0.5rem;">From user submission to final validation</p>
+            </div>
+
+            <div class="arch-wrapper">
+                <!-- Left: Flow Diagram -->
+                <div class="flow-container">
+                    
+                    <div class="flow-node node-blue">
+                        <div class="icon">👤</div>
+                        <div class="details">
+                            <h4>User Submits URL</h4>
+                            <p>submit_work</p>
+                        </div>
+                        <div class="flow-line"></div>
+                    </div>
+
+                    <div class="flow-node node-blue">
+                        <div class="icon">🌐</div>
+                        <div class="details">
+                            <h4>Fetch Web Content</h4>
+                            <p>get_webpage()</p>
+                        </div>
+                        <div class="flow-line"></div>
+                    </div>
+
+                    <div class="flow-node node-teal">
+                        <div class="icon">🛡️</div>
+                        <div class="details">
+                            <h4>Sanitize Payload</h4>
+                            <p>Clean & validate</p>
+                        </div>
+                        <div class="flow-line"></div>
+                    </div>
+
+                    <div class="flow-diamond">
+                        <div class="flow-diamond-content">
+                            <span>📄</span>
+                            <p>Truncation<br>Guard</p>
+                        </div>
+                        <div class="flow-line"></div>
+                    </div>
+
+                    <div class="branch-container">
+                        <div class="branch-line-left"></div>
+                        <div class="branch-line-right"></div>
+                        
+                        <div class="flow-node node-gray" style="width: 140px; text-align: center; flex-direction: column; gap: 0.5rem; padding: 0.75rem;">
+                            <div class="branch-line-down" style="left: 50%;"></div>
+                            <div class="details" style="width: 100%;">
+                                <p style="color: #fff; margin-bottom: 0.25rem;">> 4000 chars</p>
+                                <h4>Add Warning</h4>
+                            </div>
+                        </div>
+
+                        <div class="flow-node node-gray" style="width: 140px; text-align: center; flex-direction: column; gap: 0.5rem; padding: 0.75rem;">
+                            <div class="branch-line-down" style="left: 50%;"></div>
+                            <div class="details" style="width: 100%;">
+                                <p style="color: #fff; margin-bottom: 0.25rem;">≤ 4000 chars</p>
+                                <h4>Pass Direct</h4>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flow-node node-purple">
+                        <div class="icon">✨</div>
+                        <div class="details">
+                            <h4>GenVM LLM Leader</h4>
+                            <p>AI verification</p>
+                        </div>
+                        <div class="flow-line"></div>
+                    </div>
+
+                    <div class="flow-node node-teal">
+                        <div class="icon">👥</div>
+                        <div class="details">
+                            <h4>Validators Consensus</h4>
+                            <p>Match results</p>
+                        </div>
+                        <div class="flow-line"></div>
+                    </div>
+
+                    <div class="branch-container" style="width: 380px;">
+                        <div class="branch-line-left" style="width: 100px; left: 80px;"></div>
+                        <div class="branch-line-right" style="width: 100px; right: 80px;"></div>
+                        
+                        <div class="flow-node node-green">
+                            <div class="branch-line-down" style="left: 50%;"></div>
+                            <div class="icon" style="background: rgba(16, 185, 129, 0.2);">✓</div>
+                            <div class="details">
+                                <h4>State: APPROVED</h4>
+                            </div>
+                        </div>
+
+                        <div class="flow-node node-red">
+                            <div class="branch-line-down" style="left: 50%;"></div>
+                            <div class="icon">✕</div>
+                            <div class="details">
+                                <h4>State: REJECTED</h4>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Right: Sidebar Data -->
+                <div class="arch-sidebar">
+                    <div class="sidebar-card">
+                        <div class="sidebar-header">
+                            <h3>Step Details</h3>
+                            <div class="step-badge">1</div>
+                        </div>
+                        <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem;">
+                            <div style="font-size: 1.5rem; color: #60a5fa;">👤</div>
+                            <h4 style="font-weight: 500;">User Submits URL</h4>
+                        </div>
+                        <p style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 1rem;">User provides a public URL as proof of work for the bounty submission.</p>
+                        <div style="background: rgba(0,0,0,0.3); padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-light);">
+                            <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.25rem;">Function</p>
+                            <p style="font-family: monospace; font-size: 0.875rem;">submit_work(url)</p>
+                        </div>
+                    </div>
+
+                    <div class="sidebar-card">
+                        <div class="sidebar-header">
+                            <h3>Process Flow</h3>
+                        </div>
+                        <ul class="process-list">
+                            <li class="process-item active">
+                                <div class="process-num">1</div>
+                                <div class="process-text"><h4>User Submits URL</h4><p>submit_work</p></div>
+                            </li>
+                            <li class="process-item">
+                                <div class="process-num">2</div>
+                                <div class="process-text"><h4>Fetch Web Content</h4><p>get_webpage()</p></div>
+                            </li>
+                            <li class="process-item">
+                                <div class="process-num">3</div>
+                                <div class="process-text"><h4>Sanitize Payload</h4><p>Clean & validate</p></div>
+                            </li>
+                            <li class="process-item">
+                                <div class="process-num">4</div>
+                                <div class="process-text"><h4>Truncation Guard</h4><p>Check content size</p></div>
+                            </li>
+                            <li class="process-item">
+                                <div class="process-num">5</div>
+                                <div class="process-text"><h4>GenVM LLM Leader</h4><p>AI verification</p></div>
+                            </li>
+                            <li class="process-item">
+                                <div class="process-num">6</div>
+                                <div class="process-text"><h4>Validators Consensus</h4><p>Match results</p></div>
+                            </li>
+                            <li class="process-item">
+                                <div class="process-num">7</div>
+                                <div class="process-text"><h4>Final State</h4><p>Approved or rejected</p></div>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="sidebar-card">
+                        <div class="sidebar-header">
+                            <h3>Key Features</h3>
+                        </div>
+                        <div class="feature-grid">
+                            <div class="feature-row"><span>🌐</span> Automatic content fetching</div>
+                            <div class="feature-row"><span>🛡</span> Truncation protection (4000)</div>
+                            <div class="feature-row"><span>✨</span> AI-powered verification</div>
+                            <div class="feature-row"><span>👥</span> Multi-validator consensus</div>
+                            <div class="feature-row"><span>🔗</span> Transparent and on-chain</div>
+                            <div class="feature-row"><span>📊</span> Fair objective validation</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Dashboard Interface Section -->
+        <section id="dashboard" class="section-anchor">
+            <div class="dash-header-wrap">
+                <div>
+                    <h2 class="dash-title">Smart Contract Interface</h2>
+                    <p class="dash-subtitle">Interact with the ProofBountyJudge smart contract</p>
+                </div>
+                <div class="status-badge">
+                    <span class="status-dot"></span> Connected to GenLayer
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </div>
+            </div>
+            
+            <div class="grid-2">
+                <!-- Panel 1: Create Bounty -->
+                <div class="dash-card">
+                    <div class="card-header-flex">
+                        <div class="card-icon-box icon-purple-bg">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>
+                        </div>
+                        <div class="card-header-text">
+                            <h3>Create New Bounty</h3>
+                            <p>Deploy a new bounty with description, criteria and reward.</p>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                        <input type="text" id="b_desc" placeholder="Description (e.g., Build a dApp)">
+                    </div>
+                    <div class="input-group">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
+                        <input type="text" id="b_crit" placeholder="Acceptance Criteria">
+                    </div>
+                    <div class="input-group">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg>
+                        <input type="number" id="b_reward" placeholder="Reward Amount">
+                    </div>
+                    
+                    <button class="btn-ui btn-purple" onclick="app.createBounty()">Deploy Bounty &rarr;</button>
+                </div>
+
+                <!-- Panel 2: Submit Evidence -->
+                <div class="dash-card">
+                    <div class="card-header-flex">
+                        <div class="card-icon-box icon-green-bg">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                        </div>
+                        <div class="card-header-text">
+                            <h3>Submit Evidence</h3>
+                            <p>Submit your work as proof for an existing bounty.</p>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="9" x2="20" y2="9"></line><line x1="4" y1="15" x2="20" y2="15"></line><line x1="10" y1="3" x2="8" y2="21"></line><line x1="16" y1="3" x2="14" y2="21"></line></svg>
+                        <input type="text" id="s_bounty_id" placeholder="Bounty ID">
+                    </div>
+                    <div class="input-group">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                        <input type="url" id="s_url" placeholder="Proof URL (https://...)">
+                    </div>
+                    
+                    <button class="btn-ui btn-green" style="margin-top: 1rem;" onclick="app.submitWork()">Submit for Review &rarr;</button>
+                </div>
+            </div>
+
+            <div class="grid-2">
+                <!-- Panel 3: Validators & Missing Controls -->
+                <div class="dash-card">
+                    <div class="card-header-flex">
+                        <div class="card-icon-box icon-blue-bg">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                        </div>
+                        <div class="card-header-text">
+                            <h3>Validator Consensus & Admin Controls</h3>
+                            <p>Evaluate submissions and manage validators (owner only).</p>
+                        </div>
+                    </div>
+
+                    <div class="flex-row">
+                        <div class="input-group" style="flex:1; margin-bottom:0;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                            <input type="text" id="v_sub_id" placeholder="Submission ID">
+                        </div>
+                        <button class="btn-action" onclick="app.crossCheck()">Evaluate</button>
+                    </div>
+                    
+                    <div class="flex-row" style="margin-top: 1rem;">
+                        <div class="input-group" style="flex:1; margin-bottom:0;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+                            <input type="text" id="v_batch_ids" placeholder='Batch JSON (e.g., ["1","2"])'>
+                        </div>
+                        <button class="btn-action" onclick="app.crossCheckBatch()">Batch Evaluate</button>
+                    </div>
+                    
+                    <h4 class="sub-label">Manage Bounties & Data</h4>
+                    <div class="flex-row">
+                        <div class="input-group" style="flex:1; margin-bottom:0;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                            <input type="text" id="t_bounty_id" placeholder="Bounty ID">
+                        </div>
+                        <button class="btn-action btn-tint-green" onclick="app.setBountyActive(true)">Enable</button>
+                        <button class="btn-action btn-tint-red" onclick="app.setBountyActive(false)">Disable</button>
+                    </div>
+                    <button class="btn-action" style="width: 100%; justify-content: center; margin-top: 1rem;" onclick="app.migrateSubmissions()">Migrate Legacy Submissions</button>
+
+                    <h4 class="sub-label">Manage Validators (Owner Only)</h4>
+                    <div class="input-group">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+                        <input type="text" id="a_addr" placeholder="Wallet Address (0x...)">
+                    </div>
+                    <div class="flex-row">
+                        <button class="btn-action btn-tint-green" style="flex: 1;" onclick="app.addValidator()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
+                            Add Validator
+                        </button>
+                        <button class="btn-action btn-tint-red" style="flex: 1;" onclick="app.removeValidator()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="8" y1="12" x2="16" y2="12"></line></svg>
+                            Remove Validator
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Panel 4: Data Explorer -->
+                <div class="dash-card">
+                    <div class="card-header-flex">
+                        <div class="card-icon-box icon-orange-bg">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+                        </div>
+                        <div class="card-header-text">
+                            <h3>Data Explorer & Logs</h3>
+                            <p>Query contract data and view execution logs.</p>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                        <input type="text" id="q_id" placeholder="Bounty / Submission ID">
+                    </div>
+                    
+                    <div class="flex-row">
+                        <button class="btn-action" style="flex: 1; justify-content: center;" onclick="app.getBounty()">Get Bounty</button>
+                        <button class="btn-action" style="flex: 1; justify-content: center;" onclick="app.getAudit()">Get Audit</button>
+                        <button class="btn-action" style="flex: 1; justify-content: center;" onclick="app.getStatus()">Get Status</button>
+                    </div>
+                    
+                    <div class="flex-row" style="margin-top: 0.75rem;">
+                        <button class="btn-action" style="flex: 1; justify-content: center;" onclick="app.getPlatformStats()">Get Stats</button>
+                        <button class="btn-action" style="flex: 1; justify-content: center;" onclick="app.getPlatformConfig()">Get Config</button>
+                        <button class="btn-action" style="flex: 1; justify-content: center;" onclick="app.getOwner()">Get Owner</button>
+                    </div>
+
+                    <div class="terminal-wrap">
+                        <div class="terminal-header">
+                            <div class="terminal-title">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
+                                Terminal Output
+                            </div>
+                            <button class="btn-clear" onclick="document.getElementById('output').innerHTML = '> Ready. Connect wallet to interact with the contract...<br>'">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                                Clear
+                            </button>
+                        </div>
+                        <div id="output" class="console-output">
+                            > Ready. Connect wallet to interact with the contract...<br>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script type="module" src="main.js"></script>
+</body>
+</html>
