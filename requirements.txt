@@ -1,0 +1,12 @@
+# GenLayer SDK dependency (placeholder for local dev)
+py-genlayer>=0.1.0
+
+# Testing and linting
+pytest>=7.0.0
+black>=22.0.0
+flake8>=4.0.0
+
+# Built-in imports used in the contract (standard library, no external installation needed)
+# json
+# typing
+# urllib
