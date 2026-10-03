@@ -8,8 +8,8 @@ mock_gl = MagicMock()
 mock_gl.Contract = object  # Stub for the base contract class
 sys.modules['genlayer'] = mock_gl
 
-# Now import our contract
-from BountyJudge_2 import ProofBountyJudge
+# Correct import matching the repository filename
+from BountyJudge import ProofBountyJudge
 
 class TestProofBountyJudge(unittest.TestCase):
 
