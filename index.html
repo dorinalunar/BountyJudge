@@ -23,6 +23,7 @@
             --accent-green: #10b981;
             --accent-green-hover: #059669;
             --accent-red: #ef4444;
+            --accent-gold: #f59e0b;
             
             --flow-blue: rgba(59, 130, 246, 0.5);
             --flow-blue-bg: rgba(59, 130, 246, 0.1);
@@ -135,6 +136,7 @@
         .icon-green-bg { background: rgba(16, 185, 129, 0.1); color: var(--accent-green); border: 1px solid rgba(16, 185, 129, 0.2); }
         .icon-blue-bg { background: rgba(59, 130, 246, 0.1); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.2); }
         .icon-orange-bg { background: rgba(245, 158, 11, 0.1); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.2); }
+        .icon-gold-bg { background: rgba(234, 179, 8, 0.1); color: #eab308; border: 1px solid rgba(234, 179, 8, 0.2); }
         
         .card-header-text h3 { font-size: 1rem; font-weight: 500; color: var(--text-main); margin-bottom: 0.25rem; }
         .card-header-text p { font-size: 0.75rem; color: var(--text-muted); }
@@ -150,6 +152,8 @@
         .btn-purple:hover { background: var(--accent-purple-hover); }
         .btn-green { background: var(--accent-green); color: white; }
         .btn-green:hover { background: var(--accent-green-hover); }
+        .btn-gold { background: var(--accent-gold); color: white; }
+        .btn-gold:hover { background: #d97706; }
         
         .btn-action { background: var(--bg-input); border: 1px solid var(--border-light); color: var(--text-main); padding: 0.875rem 1rem; border-radius: 8px; font-size: 0.875rem; cursor: pointer; transition: background 0.2s; white-space: nowrap; display: flex; align-items: center; gap: 0.5rem; }
         .btn-action:hover { background: rgba(255,255,255,0.05); }
@@ -213,7 +217,7 @@
             </div>
         </header>
 
-        <!-- Architecture Section (Fixed Execution Order & Status Logic) -->
+        <!-- Architecture Section -->
         <section id="how-it-works" class="section-anchor">
             <div style="margin-bottom: 2rem;">
                 <span class="badge">VERIFICATION FLOW</span>
@@ -457,6 +461,43 @@
                     </div>
                     
                     <button class="btn-ui btn-green" style="margin-top: 1rem;" onclick="app.submitWork()">Submit for Review &rarr;</button>
+                </div>
+            </div>
+
+            <!-- New Escrow & Rewards Panel -->
+            <div class="dash-card" style="margin-bottom: 1.5rem;">
+                <div class="card-header-flex">
+                    <div class="card-icon-box icon-gold-bg">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
+                    </div>
+                    <div class="card-header-text">
+                        <h3>Escrow Funding & Rewards</h3>
+                        <p>Fund bounties with an escrow deposit, and claim payouts for approved submissions.</p>
+                    </div>
+                </div>
+                
+                <div class="grid-2" style="margin-bottom: 0;">
+                    <div>
+                        <h4 class="sub-label" style="margin-top: 0;">1. Fund Bounty (Deposit Escrow)</h4>
+                        <div class="input-group">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="9" x2="20" y2="9"></line><line x1="4" y1="15" x2="20" y2="15"></line><line x1="10" y1="3" x2="8" y2="21"></line><line x1="16" y1="3" x2="14" y2="21"></line></svg>
+                            <input type="text" id="f_bounty_id" placeholder="Bounty ID">
+                        </div>
+                        <div class="input-group">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg>
+                            <input type="number" id="f_amount" placeholder="Amount to Fund">
+                        </div>
+                        <button class="btn-ui btn-gold" onclick="app.fundBounty()">Deposit Funds</button>
+                    </div>
+                    
+                    <div>
+                        <h4 class="sub-label" style="margin-top: 0;">2. Claim Reward (Payout)</h4>
+                        <div class="input-group">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                            <input type="text" id="c_sub_id" placeholder="Submission ID (Must be APPROVED)">
+                        </div>
+                        <button class="btn-ui btn-green" onclick="app.claimReward()" style="margin-top: 1rem;">Claim Payout</button>
+                    </div>
                 </div>
             </div>
 
