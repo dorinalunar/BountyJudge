@@ -1,7 +1,7 @@
 import { createClient } from "https://esm.sh/genlayer-js";
 import { studionet } from "https://esm.sh/genlayer-js/chains";
 
-const CONTRACT_ADDRESS = "0x52F4712c96eb3823530D5688c139daaB8c77990C";
+const CONTRACT_ADDRESS = "0x623C4fa841C0EC306D6D615908c435849D39dA47";
 const CHAIN_ID_HEX = "0xf22f";
 const RPC_URL = "https://studio.genlayer.com/api";
 
@@ -300,6 +300,48 @@ const app = {
       await write("submit_work", [
         bountyId,
         proofUrl
+      ]);
+    } catch (error) {
+      log(errorMessage(error), "error");
+    }
+  },
+
+  // Fund a bounty
+  async fundBounty() {
+    const bountyId = getValue("f_bounty_id");
+    const amount = getValue("f_amount");
+
+    if (!bountyId || !amount) {
+      return log(
+        "Please enter the bounty ID and deposit amount.",
+        "error"
+      );
+    }
+
+    try {
+      await write("fund_bounty", [
+        bountyId,
+        amount
+      ]);
+    } catch (error) {
+      log(errorMessage(error), "error");
+    }
+  },
+
+  // Claim a reward
+  async claimReward() {
+    const submissionId = getValue("c_sub_id");
+
+    if (!submissionId) {
+      return log(
+        "Please enter the approved submission ID.",
+        "error"
+      );
+    }
+
+    try {
+      await write("claim_reward", [
+        submissionId
       ]);
     } catch (error) {
       log(errorMessage(error), "error");
