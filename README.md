@@ -15,7 +15,7 @@
 ## 🌟 Key Features
 
 - **🤖 AI-Driven Consensus:** Utilizes GenVM's LLM nodes (`prompt_comparative` / `strict_eq`) to evaluate bounty submissions deterministically, removing subjective human bias.
-- **💰 Escrow Funding & Payouts:** Built-in financial mechanics allow creators to fund bounties (`fund_bounty`), while approved contributors can trustlessly unlock their payouts (`claim_reward`).
+- **💰 Native Token Escrow & Payouts:** Built-in financial mechanics allow creators to lock physical $GEN tokens in escrow (`fund_bounty` via `msg.value`), while approved contributors can trustlessly receive actual token payouts directly to their wallets (`claim_reward` via `gl.transfer`).
 - **🛡️ Strict Security Validations:** Enforces robust URL parsing (`urllib.parse`) to prevent domain spoofing, alongside string sanitization and evidence truncation guards to ensure contract stability.
 - **💻 Comprehensive dApp:** A fully responsive frontend featuring an integrated on-chain terminal, transaction logs, escrow management, and a unified validator dashboard.
 
@@ -28,8 +28,8 @@
 
 ## 📁 Repository Structure
 
-- `BountyJudge.py` — The core Intelligent Contract handling state, escrow logic, roles, and AI consensus.
-- `main.js` — Application logic handling ABI mapping, wallet connection, and RPC interactions.
+- `BountyJudge.py` — The core Intelligent Contract handling state, physical native token escrow logic, roles, and AI consensus.
+- `main.js` — Application logic handling ABI mapping, wallet connection, and RPC interactions (including native token transfers).
 - `index.html` — The frontend user interface.
 - `logo.svg` — Project branding asset.
 
@@ -39,12 +39,12 @@ The `ProofBountyJudge` contract implements a robust state management system. Cor
 
 **Bounty & Escrow Management:**
 - `create_bounty` — Initialize a new bounty with criteria and reward amount.
-- `fund_bounty` — Deposit escrow funds for a specific bounty.
+- `fund_bounty` — Physically deposit native $GEN tokens into the contract's escrow for a specific bounty.
 - `set_bounty_active` — Toggle bounty availability.
 
 **Submissions & Rewards:**
 - `submit_work` — Submit a proof URL (strictly validated against allowed domains).
-- `claim_reward` — Claim the escrowed payout upon receiving an `APPROVED` status.
+- `claim_reward` — Execute a physical token transfer (`gl.transfer`) to claim the escrowed payout upon receiving an `APPROVED` status.
 
 **Validation & Consensus:**
 - `cross_check` / `cross_check_batch` — Trigger GenVM AI validators to assess evidence.
