@@ -6,9 +6,8 @@ from typing import Any
 from urllib.parse import urlparse
 
 MAX_BATCH_SIZE = 20
-SCHEMA_VERSION = 7  # Incremented schema version for escrow updates
+SCHEMA_VERSION = 8  # Incremented schema version for real token transfers
 
-# Stronger evidence-source controls
 ALLOWED_EVIDENCE_DOMAINS = ["github.com", "x.com", "twitter.com", "etherscan.io"]
 
 def _sanitize(text: str) -> str:
@@ -20,7 +19,6 @@ def _dumps(obj) -> str:
     return json.dumps(obj, sort_keys=True, separators=(",", ":"))
 
 def _is_valid_domain(url: str) -> bool:
-    """Strictly parses the URL to ensure the actual host is in the allowed list."""
     try:
         parsed = urlparse(url)
         netloc = parsed.netloc.lower().split(":")[0]
@@ -31,7 +29,6 @@ def _is_valid_domain(url: str) -> bool:
         return False
 
 def _evaluate_submission(description: str, criteria: str, proof_url: str) -> str:
-    """Nondeterministic leader task: fetch evidence + LLM judgment."""
     clean_desc = _sanitize(description)
     clean_crit = _sanitize(criteria)
     clean_url = _sanitize(proof_url)
@@ -51,7 +48,7 @@ def _evaluate_submission(description: str, criteria: str, proof_url: str) -> str
         else:
             sanitized_raw = _sanitize(raw_str)
             if len(sanitized_raw) > 4000:
-                evidence = sanitized_raw[:4000] + "\n\n[SYSTEM WARNING: EVIDENCE WAS TRUNCATED DUE TO SIZE LIMIT. Evaluate based on available text.]"
+                evidence = sanitized_raw[:4000] + "\n\n[SYSTEM WARNING: EVIDENCE TRUNCATED]"
             else:
                 evidence = sanitized_raw
                 
@@ -162,6 +159,13 @@ class ProofBountyJudge(gl.Contract):
             raise Exception("ERR_EMPTY_FIELDS")
         if len(desc) > 2000 or len(crit) > 2000:
             raise Exception("ERR_FIELD_TOO_LONG")
+            
+        try:
+            int_reward = int(reward_amount)
+            if int_reward <= 0:
+                raise Exception("ERR_INVALID_REWARD_AMOUNT")
+        except ValueError:
+            raise Exception("ERR_INVALID_REWARD_AMOUNT")
 
         bounty_id = self._next_id("bounty_counter")
         bounties = self._load("bounties_json")
@@ -181,16 +185,27 @@ class ProofBountyJudge(gl.Contract):
         return bounty_id
 
     @gl.public.write
-    def fund_bounty(self, bounty_id: str, amount: str) -> bool:
-        """Deposits / records escrow reward balance for a bounty."""
+    def fund_bounty(self, bounty_id: str) -> bool:
+        """Physically receives GEN tokens to fund the bounty."""
+        msg_value = getattr(gl.message, 'value', 0)
+        if msg_value <= 0:
+            raise Exception("ERR_NO_FUNDS_SENT")
+            
         bounties = self._load("bounties_json")
         if bounty_id not in bounties:
             raise Exception("ERR_NOT_FOUND")
+            
         bounty = bounties[bounty_id]
         if not bounty.get("is_active", False):
             raise Exception("ERR_BOUNTY_INACTIVE")
+        if bounty.get("is_funded", False):
+             raise Exception("ERR_BOUNTY_ALREADY_FUNDED")
 
-        bounty["funded_amount"] = str(amount)
+        expected_amount = int(bounty["reward_amount"])
+        if msg_value < expected_amount:
+            raise Exception(f"ERR_INSUFFICIENT_FUNDS: Expected {expected_amount}, got {msg_value}")
+
+        bounty["funded_amount"] = str(msg_value)
         bounty["is_funded"] = True
         bounties[bounty_id] = bounty
         self._save("bounties_json", bounties)
@@ -206,7 +221,6 @@ class ProofBountyJudge(gl.Contract):
             raise Exception("ERR_UNAUTHORIZED")
         
         bounty["is_active"] = self._ensure_bool(is_active)
-        
         bounties[bounty_id] = bounty
         self._save("bounties_json", bounties)
 
@@ -223,7 +237,6 @@ class ProofBountyJudge(gl.Contract):
         if not (url.startswith("https://") or url.startswith("http://")):
             raise Exception("ERR_INVALID_URL")
             
-        # Updated to strict url parsing
         if not _is_valid_domain(url):
             raise Exception("ERR_UNAUTHORIZED_EVIDENCE_SOURCE")
 
@@ -303,13 +316,12 @@ class ProofBountyJudge(gl.Contract):
         caller = str(gl.message.sender_address)
         if not self._is_validator(caller):
             raise Exception("ERR_UNAUTHORIZED_VALIDATOR")
-
         raw_approved = self._run_cross_check(submission_id)
         return self._ensure_bool(raw_approved)
         
     @gl.public.write
     def claim_reward(self, submission_id: str) -> str:
-        """Allows submitter to release escrow payout upon APPROVED status."""
+        """Physically transfers the escrowed tokens to the approved submitter."""
         submissions = self._load("submissions_json")
         if submission_id not in submissions:
             raise Exception("ERR_NOT_FOUND")
@@ -326,14 +338,20 @@ class ProofBountyJudge(gl.Contract):
             raise Exception("ERR_BOUNTY_NOT_FOUND")
         if bounty.get("is_paid", False):
             raise Exception("ERR_BOUNTY_ALREADY_PAID")
+        if not bounty.get("is_funded", False):
+            raise Exception("ERR_BOUNTY_NOT_FUNDED")
 
-        caller = str(gl.message.sender_address)
-        if caller not in (sub["submitter"], bounty["creator"], self.owner):
-            raise Exception("ERR_UNAUTHORIZED")
+        amount_to_pay = int(bounty["funded_amount"])
+        submitter_addr = sub["submitter"]
+        
+        try:
+            gl.transfer(submitter_addr, amount_to_pay)
+        except Exception as e:
+            raise Exception(f"ERR_TRANSFER_FAILED: {str(e)}")
 
         sub["is_claimed"] = True
         bounty["is_paid"] = True
-        bounty["paid_to"] = sub["submitter"]
+        bounty["paid_to"] = submitter_addr
         bounty["is_active"] = False
 
         submissions[submission_id] = sub
@@ -341,7 +359,7 @@ class ProofBountyJudge(gl.Contract):
         self._save("submissions_json", submissions)
         self._save("bounties_json", bounties)
 
-        return f"Reward claimed by {sub['submitter']}"
+        return f"Reward of {amount_to_pay} claimed by {submitter_addr}"
 
     @gl.public.write
     def cross_check_batch(self, submission_ids_json: str) -> str:
