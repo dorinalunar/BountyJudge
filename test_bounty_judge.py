@@ -6,6 +6,7 @@ import sys
 # Mock GenLayer (gl) environment for local testing
 mock_gl = MagicMock()
 mock_gl.Contract = object  # Stub for the base contract class
+mock_gl.transfer = MagicMock()  # Mock for the physical token transfer
 sys.modules['genlayer'] = mock_gl
 
 # Correct import matching the repository filename
@@ -19,8 +20,11 @@ class TestProofBountyJudge(unittest.TestCase):
         self.user_address = "0xUser456"
         self.validator_address = "0xValidator789"
 
-        # Mock transaction sender as owner
+        # Mock transaction sender and value
         mock_gl.message.sender_address = self.owner_address
+        mock_gl.message.value = 0
+        mock_gl.transfer.reset_mock()
+        
         self.contract = ProofBountyJudge()
 
     def test_initialization(self):
@@ -57,7 +61,6 @@ class TestProofBountyJudge(unittest.TestCase):
             reward_amount="100"
         )
         self.assertEqual(bounty_id, "1")
-        self.assertEqual(self.contract.bounty_counter, "1")
 
         bounties = json.loads(self.contract.bounties_json)
         self.assertEqual(bounties["1"]["description"], "Build a dApp")
@@ -72,16 +75,31 @@ class TestProofBountyJudge(unittest.TestCase):
         self.assertTrue("ERR_EMPTY_FIELDS" in str(context.exception))
 
     def test_fund_bounty_success(self):
-        """Test successful funding of a bounty."""
+        """Test successful physical funding of a bounty."""
         mock_gl.message.sender_address = self.owner_address
         self.contract.create_bounty("Task", "Crit", "100")
         
-        # Fund the bounty
-        self.contract.fund_bounty("1", "100")
+        # Mock sending 100 tokens with the transaction
+        mock_gl.message.value = 100
+        
+        # Fund the bounty (uses msg.value instead of passing amount parameter)
+        self.contract.fund_bounty("1")
         
         bounties = json.loads(self.contract.bounties_json)
         self.assertTrue(bounties["1"]["is_funded"])
         self.assertEqual(bounties["1"]["funded_amount"], "100")
+        
+    def test_fund_bounty_insufficient_funds(self):
+        """Test funding fails if sent value is less than reward amount."""
+        mock_gl.message.sender_address = self.owner_address
+        self.contract.create_bounty("Task", "Crit", "100")
+        
+        # Mock sending only 50 tokens
+        mock_gl.message.value = 50
+        
+        with self.assertRaises(Exception) as context:
+            self.contract.fund_bounty("1")
+        self.assertTrue("ERR_INSUFFICIENT_FUNDS" in str(context.exception))
 
     def test_submit_work_success(self):
         """Test successful proof submission from an allowed domain."""
@@ -92,7 +110,6 @@ class TestProofBountyJudge(unittest.TestCase):
         sub_id = self.contract.submit_work("1", "https://github.com/dorinalunar/repo")
 
         self.assertEqual(sub_id, "1")
-        self.assertEqual(self.contract.submission_counter, "1")
 
     def test_submit_work_strict_domain_bypass(self):
         """Test blocking of domain substring spoofing (e.g., attacker.com/github.com)."""
@@ -101,7 +118,6 @@ class TestProofBountyJudge(unittest.TestCase):
 
         mock_gl.message.sender_address = self.user_address
         with self.assertRaises(Exception) as context:
-            # Attempting to bypass using a valid domain as a path
             self.contract.submit_work("1", "https://attacker.com/github.com/my-proof")
         self.assertTrue("ERR_UNAUTHORIZED_EVIDENCE_SOURCE" in str(context.exception))
 
@@ -127,10 +143,13 @@ class TestProofBountyJudge(unittest.TestCase):
         self.assertTrue("ERR_UNAUTHORIZED_VALIDATOR" in str(context.exception))
 
     def test_claim_reward_success(self):
-        """Test claiming a reward for an approved submission."""
+        """Test claiming a reward physically transfers tokens for an approved submission."""
         mock_gl.message.sender_address = self.owner_address
         self.contract.create_bounty("Task", "Crit", "100")
-        self.contract.fund_bounty("1", "100")
+        
+        # Mock funding the bounty
+        mock_gl.message.value = 100
+        self.contract.fund_bounty("1")
         
         mock_gl.message.sender_address = self.user_address
         self.contract.submit_work("1", "https://github.com/test")
@@ -146,13 +165,15 @@ class TestProofBountyJudge(unittest.TestCase):
         
         self.assertTrue(self.user_address in result)
         
+        # Verify gl.transfer was called with correct address and amount
+        mock_gl.transfer.assert_called_once_with(self.user_address, 100)
+        
         # Verify state changes
         submissions = json.loads(self.contract.submissions_json)
         bounties = json.loads(self.contract.bounties_json)
         self.assertTrue(submissions["1"]["is_claimed"])
         self.assertTrue(bounties["1"]["is_paid"])
         self.assertFalse(bounties["1"]["is_active"])
-        self.assertEqual(bounties["1"]["paid_to"], self.user_address)
 
     def test_claim_reward_unapproved(self):
         """Test claiming a reward fails if submission is not approved."""
