@@ -1,7 +1,8 @@
 import { createClient } from "https://esm.sh/genlayer-js";
 import { studionet } from "https://esm.sh/genlayer-js/chains";
 
-const CONTRACT_ADDRESS = "0x623C4fa841C0EC306D6D615908c435849D39dA47";
+// Updated Contract Address
+const CONTRACT_ADDRESS = "0xC096f86A3c6AD11d2D7016c08e56f056a3565A31";
 const CHAIN_ID_HEX = "0xf22f";
 const RPC_URL = "https://studio.genlayer.com/api";
 
@@ -175,16 +176,22 @@ async function ensureWallet() {
 
 // Contract write operations
 
-async function write(functionName, args = []) {
+async function write(functionName, args = [], options = {}) {
   await ensureWallet();
 
   log(`Waiting for transaction confirmation: ${functionName}`);
 
-  const result = await writeClient.writeContract({
+  const writeParams = {
     address: CONTRACT_ADDRESS,
     functionName,
     args
-  });
+  };
+  
+  if (options.value) {
+    writeParams.value = options.value;
+  }
+
+  const result = await writeClient.writeContract(writeParams);
 
   const txId =
     typeof result === "string"
@@ -236,6 +243,10 @@ const app = {
         "Please enter the description, criteria, and reward.",
         "error"
       );
+    }
+    
+    if (parseInt(reward) <= 0 || isNaN(parseInt(reward))) {
+         return log("Reward amount must be greater than 0.", "error");
     }
 
     try {
@@ -306,23 +317,23 @@ const app = {
     }
   },
 
-  // Fund a bounty
+  // Fund a bounty (with real tokens)
   async fundBounty() {
     const bountyId = getValue("f_bounty_id");
     const amount = getValue("f_amount");
 
     if (!bountyId || !amount) {
-      return log(
-        "Please enter the bounty ID and deposit amount.",
-        "error"
-      );
+      return log("Please enter the bounty ID and deposit amount.", "error");
     }
 
     try {
-      await write("fund_bounty", [
-        bountyId,
-        amount
-      ]);
+      await ensureWallet();
+      log(`Waiting for transaction confirmation to fund bounty ${bountyId} with ${amount} tokens...`);
+
+      // We need to pass the native token value with the transaction
+      // Passing BigInt value to the write wrapper function
+      const result = await write("fund_bounty", [bountyId], { value: BigInt(amount) });
+      
     } catch (error) {
       log(errorMessage(error), "error");
     }
