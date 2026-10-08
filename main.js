@@ -2,7 +2,7 @@ import { createClient } from "https://esm.sh/genlayer-js";
 import { studionet } from "https://esm.sh/genlayer-js/chains";
 
 // Updated Contract Address for GenLayer Studio Dev
-const CONTRACT_ADDRESS = "0xc1f999c0a23901c5A0Bb1388d99fa109a30fd7Db";
+const CONTRACT_ADDRESS = "0xF6B15B728D1EB441E9e8D60E99863f79aFd26E58";
 const CHAIN_ID_HEX = "0xf22d"; // 61997 in hex
 const RPC_URL = "https://studio-dev.genlayer.com/api";
 
