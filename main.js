@@ -1,15 +1,15 @@
 import { createClient } from "https://esm.sh/genlayer-js";
 import { studionet } from "https://esm.sh/genlayer-js/chains";
 
-// Updated Contract Address
-const CONTRACT_ADDRESS = "0xC096f86A3c6AD11d2D7016c08e56f056a3565A31";
-const CHAIN_ID_HEX = "0xf22f";
-const RPC_URL = "https://studio.genlayer.com/api";
+// Updated Contract Address for GenLayer Studio Dev
+const CONTRACT_ADDRESS = "0xc1f999c0a23901c5A0Bb1388d99fa109a30fd7Db";
+const CHAIN_ID_HEX = "0xf22d"; // 61997 in hex
+const RPC_URL = "https://studio-dev.genlayer.com/api";
 
 const studioChain = {
   ...studionet,
-  id: 61999,
-  name: "GenLayer Studio",
+  id: 61997,
+  name: "GenLayer Studio Dev",
   rpcUrls: {
     default: { http: [RPC_URL] },
     public: { http: [RPC_URL] }
@@ -90,7 +90,7 @@ async function ensureNetwork() {
       params: [
         {
           chainId: CHAIN_ID_HEX,
-          chainName: "GenLayer Studio",
+          chainName: "GenLayer Studio Dev",
           nativeCurrency: {
             name: "GEN",
             symbol: "GEN",
@@ -98,7 +98,7 @@ async function ensureNetwork() {
           },
           rpcUrls: [RPC_URL],
           blockExplorerUrls: [
-            "https://explorer-studio.genlayer.com"
+            "https://explorer-studio-dev.genlayer.com"
           ]
         }
       ]
@@ -186,7 +186,7 @@ async function write(functionName, args = [], options = {}) {
     functionName,
     args
   };
-  
+
   if (options.value) {
     writeParams.value = options.value;
   }
@@ -244,7 +244,7 @@ const app = {
         "error"
       );
     }
-    
+
     if (parseInt(reward) <= 0 || isNaN(parseInt(reward))) {
          return log("Reward amount must be greater than 0.", "error");
     }
@@ -330,10 +330,10 @@ const app = {
       await ensureWallet();
       log(`Waiting for transaction confirmation to fund bounty ${bountyId} with ${amount} tokens...`);
 
-      // We need to pass the native token value with the transaction
-      // Passing BigInt value to the write wrapper function
-      const result = await write("fund_bounty", [bountyId], { value: BigInt(amount) });
-      
+      // Convert amount in GEN to WEI (18 decimals)
+      const weiAmount = BigInt(parseFloat(amount) * 10**18);
+      await write("fund_bounty", [bountyId], { value: weiAmount });
+
     } catch (error) {
       log(errorMessage(error), "error");
     }
@@ -354,6 +354,35 @@ const app = {
       await write("claim_reward", [
         submissionId
       ]);
+    } catch (error) {
+      log(errorMessage(error), "error");
+    }
+  },
+
+  // Refund a bounty
+  async refundBounty() {
+    const bountyId = getValue("r_bounty_id");
+
+    if (!bountyId) {
+      return log(
+        "Please enter the bounty ID.",
+        "error"
+      );
+    }
+
+    try {
+      await write("refund_bounty", [
+        bountyId
+      ]);
+    } catch (error) {
+      log(errorMessage(error), "error");
+    }
+  },
+
+  // Withdraw credit
+  async withdrawCredit() {
+    try {
+      await write("withdraw_credit", []);
     } catch (error) {
       log(errorMessage(error), "error");
     }
@@ -539,6 +568,39 @@ const app = {
       await read(
         "get_submission_status",
         [id]
+      );
+    } catch (error) {
+      log(errorMessage(error), "error");
+    }
+  },
+
+  // Get credit balance for an address
+  async getCredit() {
+    const address = getValue("q_credit_addr");
+
+    if (!/^0x[0-9a-fA-F]{40}$/.test(address)) {
+      return log(
+        "Please enter a valid wallet address.",
+        "error"
+      );
+    }
+
+    try {
+      await read(
+        "get_credit",
+        [address]
+      );
+    } catch (error) {
+      log(errorMessage(error), "error");
+    }
+  },
+
+  // Get current contract escrow balance
+  async getEscrowBalance() {
+    try {
+      await read(
+        "get_escrow_balance",
+        []
       );
     } catch (error) {
       log(errorMessage(error), "error");
