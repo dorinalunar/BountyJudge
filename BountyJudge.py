@@ -531,4 +531,98 @@ class ProofBountyJudge(gl.contract.Contract):
             except Exception as exc:
                 results.append({
                     "submission_id": sid,
-                    "is_approved":
+                    "is_approved": False,
+                    "status": "ERROR_EXECUTION",
+                    "reason": _sanitize(str(exc))[:120],
+                })
+        return _dumps(results)
+
+    @gl.public.write
+    def migrate_submission_types(self) -> str:
+        caller = str(gl.message.sender_address)
+        if caller != self.owner:
+            raise Exception("ERR_UNAUTHORIZED")
+
+        submissions = self._load("submissions_json")
+        migrated_count = 0
+
+        for sid, sub in submissions.items():
+            if "leader_result" in sub and isinstance(sub["leader_result"].get("is_approved"), str):
+                val = sub["leader_result"]["is_approved"].lower()
+                sub["leader_result"]["is_approved"] = (val == "true")
+                migrated_count += 1
+
+        if migrated_count:
+            self._save("submissions_json", submissions)
+
+        return f"Migrated {migrated_count} submissions."
+
+    @gl.public.view
+    def get_platform_config(self) -> str:
+        return _dumps(
+            {"max_batch_size": MAX_BATCH_SIZE, "schema_version": SCHEMA_VERSION}
+        )
+
+    @gl.public.view
+    def get_bounty_details(self, bounty_id: str) -> str:
+        bounties = self._load("bounties_json")
+        if bounty_id not in bounties:
+            return _dumps({"error": "ERR_NOT_FOUND"})
+        return _dumps(bounties[bounty_id])
+
+    @gl.public.view
+    def get_submission_status(self, submission_id: str) -> str:
+        submissions = self._load("submissions_json")
+        if submission_id not in submissions:
+            return _dumps({"error": "ERR_NOT_FOUND"})
+        s = submissions[submission_id]
+        return _dumps(
+            {
+                "status": s["status"],
+                "has_been_checked": int(s.get("last_checked_at", 0)) > 0,
+                "last_checked_at": s.get("last_checked_at", 0),
+            }
+        )
+
+    @gl.public.view
+    def get_submission_audit(self, submission_id: str) -> str:
+        submissions = self._load("submissions_json")
+        if submission_id not in submissions:
+            return _dumps({"error": "ERR_NOT_FOUND"})
+        s = submissions[submission_id]
+        return _dumps(
+            {
+                "version": SCHEMA_VERSION,
+                "submission_id": s["submission_id"],
+                "bounty_id": s["bounty_id"],
+                "status": s["status"],
+                "is_claimed": s.get("is_claimed", False),
+                "resolution_reason": s.get("resolution_reason", ""),
+                "leader_result": s.get("leader_result", {}),
+                "timestamp": s.get("last_checked_at", 0),
+            }
+        )
+
+    @gl.public.view
+    def get_platform_stats(self) -> str:
+        return _dumps(
+            {
+                "total_bounties": int(self.bounty_counter),
+                "total_submissions": int(self.submission_counter),
+                "owner": self.owner,
+            }
+        )
+
+    @gl.public.view
+    def get_credit(self, address: str) -> str:
+        """GEN (in wei) this contract owes back to `address`."""
+        return str(int(self._load("credits_json").get(str(address), "0")))
+
+    @gl.public.view
+    def get_escrow_balance(self) -> str:
+        """GEN (in wei) this contract actually holds right now."""
+        return str(int(self.balance))
+
+    @gl.public.view
+    def get_owner(self) -> str:
+        return self.owner
