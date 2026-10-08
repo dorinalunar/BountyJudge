@@ -4,7 +4,8 @@
   <p><b>Automated Web3 Bounty Verification Protocol via GenVM AI Consensus</b></p>
   
   [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-  [![GenLayer](https://img.shields.io/badge/Network-GenLayer_Testnet-6366f1.svg)]()
+  [![GenLayer](https://img.shields.io/badge/Network-Studio_Dev-6366f1.svg)]()
+  [![GenVM](https://img.shields.io/badge/GenVM-v0.3.0-059669.svg)]()
   [![Python](https://img.shields.io/badge/Contract-Python-3776AB.svg)]()
 </div>
 
@@ -14,23 +15,27 @@
 
 ## 🌟 Key Features
 
-- **🤖 AI-Driven Consensus:** Utilizes GenVM's LLM nodes (`prompt_comparative` / `strict_eq`) to evaluate bounty submissions deterministically, removing subjective human bias.
-- **💰 Native Token Escrow & Payouts:** Built-in financial mechanics allow creators to lock physical $GEN tokens in escrow (`fund_bounty` via `msg.value`), while approved contributors can trustlessly receive actual token payouts directly to their wallets (`claim_reward` via `gl.transfer`).
-- **🛡️ Strict Security Validations:** Enforces robust URL parsing (`urllib.parse`) to prevent domain spoofing, alongside string sanitization and evidence truncation guards to ensure contract stability.
-- **💻 Comprehensive dApp:** A fully responsive frontend featuring an integrated on-chain terminal, transaction logs, escrow management, and a unified validator dashboard.
+- **🤖 AI-Driven Consensus:** Utilizes GenVM v0.3 LLM nodes (`prompt_comparative`) to evaluate bounty submissions deterministically, removing subjective human bias.
+- **💰 Native Token Escrow & Secure Payouts:** Built-in financial mechanics allow creators to lock physical native tokens in escrow (`fund_bounty` via `@gl.public.write.payable`). Approved contributors receive actual token payouts directly to their EOAs (`claim_reward` via external `_Wallet(Address).emit_transfer()`).
+- **🛡️ Refund & Credit Mechanics:** Prevents stranded funds. Overpayments or invalid funding attempts are recorded in a local credit ledger and can be safely retrieved via `withdraw_credit`. Unclaimed bounties can be refunded via `refund_bounty`.
+- **🌐 Strict Security Validations:** Enforces robust URL parsing (`urllib.parse`) to prevent domain spoofing, alongside string sanitization and evidence truncation guards to ensure contract stability.
+- **💻 Comprehensive dApp:** A fully responsive frontend featuring an integrated on-chain terminal, transaction logs, escrow/refund management, and a unified validator dashboard.
 
 ## 🏗 Architecture & Tech Stack
 
 - **Smart Contract:** Python (GenLayer Intelligent Contract via `py-genlayer` SDK)
-- **Consensus Mechanism:** GenVM Nondeterministic AI Execution
+- **Consensus Mechanism:** GenVM v0.3.0 Nondeterministic AI Execution
 - **Frontend:** Vanilla JavaScript, HTML5, CSS3 (No build steps required)
-- **Network:** GenLayer Studio Testnet
+- **Network:** GenLayer Studio Dev / Studio Next (Chain ID: 61997)
+- **Contract Address:** `0xF6B15B728D1EB441E9e8D60E99863f79aFd26E58`
 
 ## 📁 Repository Structure
 
-- `BountyJudge.py` — The core Intelligent Contract handling state, physical native token escrow logic, roles, and AI consensus.
-- `main.js` — Application logic handling ABI mapping, wallet connection, and RPC interactions (including native token transfers).
+- `BountyJudge.py` — The core Intelligent Contract handling state, native token escrow logic, roles, and AI consensus.
+- `main.js` — Application logic handling wallet connection, RPC interactions, and network switching.
 - `index.html` — The frontend user interface.
+- `test_bounty_judge.py` — Unit test suite mocking GenVM v0.3.0 dependencies and physical transfers.
+- `BountyJudge_ONCHAIN_PROOF.md` — Documented on-chain transaction logs proving the escrow/payout architecture.
 - `logo.svg` — Project branding asset.
 
 ## 📝 Smart Contract Interface
@@ -39,12 +44,14 @@ The `ProofBountyJudge` contract implements a robust state management system. Cor
 
 **Bounty & Escrow Management:**
 - `create_bounty` — Initialize a new bounty with criteria and reward amount.
-- `fund_bounty` — Physically deposit native $GEN tokens into the contract's escrow for a specific bounty.
-- `set_bounty_active` — Toggle bounty availability.
+- `fund_bounty` — (Payable) Physically deposit native tokens into the contract's escrow. Excess funds or invalid deposits are safely credited back.
+- `set_bounty_active` — Toggle bounty availability (creator only).
 
-**Submissions & Rewards:**
+**Submissions, Rewards & Refunds:**
 - `submit_work` — Submit a proof URL (strictly validated against allowed domains).
-- `claim_reward` — Execute a physical token transfer (`gl.transfer`) to claim the escrowed payout upon receiving an `APPROVED` status.
+- `claim_reward` — Execute a physical external token transfer to claim the escrowed payout upon receiving an `APPROVED` status.
+- `refund_bounty` — Allows the creator to reclaim their escrow if no approved submission is waiting.
+- `withdraw_credit` — Retrieve any tokens that could not be escrowed during funding.
 
 **Validation & Consensus:**
 - `cross_check` / `cross_check_batch` — Trigger GenVM AI validators to assess evidence.
@@ -62,7 +69,7 @@ Since the frontend is built with vanilla web technologies, running the dApp loca
 2. **Launch the dApp:**
    Open `index.html` in any modern web browser.
 3. **Connect & Interact:**
-   Click **Connect Wallet** to automatically configure and connect to the GenLayer Testnet, then begin interacting with the smart contract.
+   Click **Connect Wallet**. The dApp will automatically prompt you to add and switch to the **GenLayer Studio Dev** network (Chain 61997), then you can begin interacting with the smart contract.
 
 ## 📄 License
 
