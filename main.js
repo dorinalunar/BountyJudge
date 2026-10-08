@@ -669,4 +669,4 @@ if (window.ethereum) {
       userAccount = null;
     }
   );
-}
+} 
